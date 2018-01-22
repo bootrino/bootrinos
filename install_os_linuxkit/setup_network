@@ -1,0 +1,142 @@
+#!/sbin/openrc-run
+# andrew.stuart@supercoders.com.au
+# 4 jan 2018
+# sets up the network configuration files for Amazon, DigitalOcean and Google Compute Engine
+# this is an OpenRC script for Alpine Linux
+
+PATH=$PATH:/bin:/sbin
+
+
+depend() {
+    # must run before the network is initialized
+    need localmount
+    after bootmisc hwdrivers modules
+    before net
+}
+
+determine_cloud_type()
+{
+    # case with wildcard pattern is how to do "endswith" in shell
+
+    SIGNATURE=$(cat /sys/class/dmi/id/sys_vendor)
+    case "${SIGNATURE}" in
+         "DigitalOcean")
+            CLOUD_TYPE="digitalocean"
+            ;;
+    esac
+
+    SIGNATURE=$(cat /sys/class/dmi/id/product_name)
+    case "${SIGNATURE}" in
+         "Google Compute Engine")
+            CLOUD_TYPE="googlecomputeengine"
+            ;;
+    esac
+
+    SIGNATURE=$(cat /sys/class/dmi/id/product_version)
+    case ${SIGNATURE} in
+         *amazon)
+            echo Detected cloud Amazon Web Services....
+            CLOUD_TYPE="amazonwebservices"
+            ;;
+    esac
+    echo Detected cloud ${CLOUD_TYPE}
+}
+
+configure_network()
+{
+    # create a default interfaces file
+        sh -c 'cat > /etc/network/interfaces' << EOF
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet dhcp
+EOF
+
+    if [ "${CLOUD_TYPE}" == "amazonwebservices" ]; then
+      echo Configure amazonwebservices....
+      # dhcp seems to work properly on AWS so no specific additional network setup needed
+        sh -c 'cat > /etc/network/interfaces' << EOF
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet dhcp
+EOF
+
+    fi;
+
+    if [ "${CLOUD_TYPE}" == "digitalocean" ]; then
+    echo Configure digitalocean....
+        # if on digitalocean
+        ifconfig eth0 169.254.1.1 netmask 255.255.0.0
+        route add -net 169.254.0.0 netmask 255.255.0.0 dev eth0
+        PUBLIC_IPV4=$(wget -O - http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)
+        NETMASK=$(wget -O - http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/netmask)
+        GATEWAY=$(wget -O - http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/gateway)
+        ip addr add ${PUBLIC_IPV4}/${NETMASK} dev eth0
+        echo NETMASK ${NETMASK}
+        echo PUBLIC_IPV4 ${PUBLIC_IPV4}
+        echo GATEWAY ${GATEWAY}
+        ip route add default via ${GATEWAY}
+        # configure name servers
+        echo nameserver 67.207.67.3 > /etc/resolv.conf
+        echo nameserver 67.207.67.2 >> /etc/resolv.conf
+        sh -c 'cat > /etc/network/interfaces' << EOF
+auto lo
+iface lo inet loopback
+dns-nameservers 67.207.67.3 67.207.67.2
+
+auto eth0
+iface eth0 inet static
+    address ${PUBLIC_IPV4}
+    netmask ${NETMASK}
+    gateway ${GATEWAY}
+EOF
+        # on Alpine, we need to flush out the manual network config and then restart network with ifup
+        # if we don't do this then startng nginx says "* ERROR: networking failed to start"
+        ip addr flush dev eth0
+    fi;
+
+    if [ "${CLOUD_TYPE}" == "googlecomputeengine" ]; then
+        # could not find a way to make udhcpc work with classless static routes
+        #/sbin/udhcpc -i eth0 -O routes -O msstaticroutes -O staticroutes -s /usr/share/udhcpc/default.script
+        echo Configure googlecomputeengine....
+        #sleep 10 # needed?
+        mkdir /var/db
+        touch /var/db/dhclient.leases
+        dhclient -v -cf /etc/dhcp/dhclient.conf
+        # tinycore default mtu is 1500, Google needs it to be 1460 or ssh won't work
+        ip link set mtu 1460 dev eth0
+        # dhclient configures name servers
+    fi;
+
+    ifup eth0
+
+    echo cloud type: ${CLOUD_TYPE} > /dev/console
+    echo cloud type: ${CLOUD_TYPE} > /dev/tty0
+    echo cloud type: ${CLOUD_TYPE} > /dev/tty1
+    echo cloud type: ${CLOUD_TYPE} > /dev/ttyS0
+    ifconfig -a > /dev/console
+    ifconfig -a > /dev/tty0
+    ifconfig -a > /dev/tty1
+    ifconfig -a > /dev/ttyS0
+    route -n > /dev/console
+    route -n > /dev/tty0
+    route -n > /dev/tty1
+    route -n > /dev/ttyS0
+    ip addr show > /dev/console
+    ip addr show > /dev/tty0
+    ip addr show > /dev/tty1
+    ip addr show > /dev/ttyS0
+
+}
+
+
+
+start() {
+    determine_cloud_type
+    configure_network
+}
+
+
