@@ -65,7 +65,8 @@ setup
 download_linuxkit
 create_syslinuxcfg
 
-echo "REBOOT is required at this point to launch"
-echo "REBOOT is required at this point to launch" > /dev/console
-echo "REBOOT is required at this point to launch" > /dev/tty0
+#echo "REBOOT is required at this point to launch"
+#echo "REBOOT is required at this point to launch" > /dev/console
+#echo "REBOOT is required at this point to launch" > /dev/tty0
+sudo reboot
 
