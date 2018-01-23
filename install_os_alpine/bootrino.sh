@@ -33,7 +33,7 @@ setup()
 
 download_alpine()
 {
-    ALPINE_ISO_NAME=alpine-virt-3.7.0-x86_64.iso
+    ALPINE_ISO_NAME=alpine-vanilla-3.7.0-x86_64.iso
     ALPINE_ISO_URL=http://dl-cdn.alpinelinux.org/alpine/v3.7/releases/x86_64/
     cd ${ROOT_PARTITION}
     sudo wget ${ALPINE_ISO_URL}${ALPINE_ISO_NAME}
