@@ -7,7 +7,7 @@ read BOOTRINOJSON <<"BOOTRINOJSONMARKER"
   "description": "Install Alpine Linux from Tiny Core Linux. WARNING THIS IS AN EXAMPLE ONLY - THERE IS NO PASSWORD ON root USER!",
   "options": "",
   "logoURL": "",
-  "readmeURL": "https://raw.githubusercontent.com/bootrino/bootrinos/master/install_os_yocto/README.md",
+  "readmeURL": "https://raw.githubusercontent.com/bootrino/bootrinos/master/install_os_alpine/README.md",
   "launchTargetsURL": "https://raw.githubusercontent.com/bootrino/launchtargets/master/defaultLaunchTargetsLatest.json",
   "websiteURL": "https://github.com/bootrino/",
   "author": {
@@ -73,7 +73,7 @@ download_apk_ovl()
     URL_BASE=https://raw.githubusercontent.com/bootrino/bootrinos/master/install_os_alpine/
     cd ${BOOT_PARTITION}
     # goes in the root of the boot volume, where Alpine picks it ip
-    sudo wget ${URL_BASE}cloud_ssh_nginx.apkovl.tar.gz
+    sudo wget ${URL_BASE}localhost.apkovl.tar.gz
     sudo chmod ug+rx *
 }
 
