@@ -29,11 +29,11 @@ setup()
     set +xe
     BOOT_PARTITION=/mnt/boot_partition/
     ROOT_PARTITION=/mnt/root_partition/
+    ALPINE_ISO_NAME=alpine-vanilla-3.7.0-x86_64.iso
 }
 
 download_alpine()
 {
-    ALPINE_ISO_NAME=alpine-vanilla-3.7.0-x86_64.iso
     ALPINE_ISO_URL=http://dl-cdn.alpinelinux.org/alpine/v3.7/releases/x86_64/
     cd ${ROOT_PARTITION}
     sudo wget ${ALPINE_ISO_URL}${ALPINE_ISO_NAME}
@@ -80,7 +80,7 @@ download_apk_ovl()
 copy_alpine_from_iso_to_boot()
 {
     sudo mkdir -p ${ROOT_PARTITION}alpinefiles
-    sudo mount -o loop ${ROOT_PARTITION}alpine-virt-3.7.0-x86_64.iso ${ROOT_PARTITION}alpinefiles
+    sudo mount -o loop ${ROOT_PARTITION}${ALPINE_ISO_NAME} ${ROOT_PARTITION}alpinefiles
     sudo cp -r ${ROOT_PARTITION}alpinefiles/* ${BOOT_PARTITION}.
     sudo umount ${ROOT_PARTITION}alpinefiles
     sudo rm -rf ${ROOT_PARTITION}alpinefiles
