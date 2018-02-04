@@ -39,7 +39,7 @@ install_tinycore_os()
     cd /opt/install_tinycore_os
     sudo wget ${URL_BASE}bootrino.sh
     sudo chmod ug+rx bootrino.sh
-    source ./bootrino.sh
+    source ./bootrino.sh --reboot=false
 }
 
 download_tinycore_packages()

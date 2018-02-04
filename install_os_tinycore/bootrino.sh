@@ -92,6 +92,26 @@ setup()
 
 }
 
+process_arguments()
+{
+    # ref https://stackoverflow.com/a/28466267
+    REBOOT=true
+    while getopts ab:c-: arg; do
+      case $arg in
+        r )  REBOOT="$OPTARG" ;;
+        - )  LONG_OPTARG="${OPTARG#*=}"
+             case $OPTARG in
+               reboot=?* )  REBOOT="$LONG_OPTARG" ;;
+               reboot*   )  REBOOT=false ;;
+               '' )        break ;; # "--" terminates argument processing
+               * )         echo "Illegal option --$OPTARG" >&2; exit 2 ;;
+             esac ;;
+        \? ) exit 2 ;;  # getopts already reported the illegal option
+      esac
+    done
+    shift $((OPTIND-1)) # remove parsed options and args from $@ list
+}
+
 create_syslinuxcfg()
 {
 # notice that we did not include bootrino_initramfs.gz on the initrd. This ensures the
@@ -140,13 +160,34 @@ ${NEWPW}
 EOF
 }
 
-#set_password
+
+reboot_or_not()
+{
+    # --reboot is an optional argument to this script, but if provided, it must be true or false
+    # if not provided then REBOOT=false (see above)
+    # typically, if the goal is just to do a straight OS install then you'd reboot
+    # but if this script is called by another script to do an OS install prior to other stuff, then you wouldn't reboot
+    case $REBOOT in
+        true )
+            sudo reboot
+            ;;
+        false )
+            echo "REBOOT is required at this point to launch" | sudo tee -a /dev/tty0
+            echo "REBOOT is required at this point to launch" | sudo tee -a /dev/console
+            echo "REBOOT is required at this point to launch" | sudo tee -a /dev/ttyS0
+            ;;
+        * )
+            echo "--reboot must be true or false"
+            exit 2
+            ;;
+    esac
+}
+
 determine_cloud_type
 setup
+process_arguments
+#set_password
 create_syslinuxcfg
 install_tinycore
+reboot_or_not
 
-
-echo "REBOOT is required at this point to launch"
-echo "REBOOT is required at this point to launch" > /dev/console
-echo "REBOOT is required at this point to launch" > /dev/tty0
