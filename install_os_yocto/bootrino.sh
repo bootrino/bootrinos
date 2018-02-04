@@ -243,6 +243,9 @@ reboot_or_not()
     # but if this script is called by another script to do an OS install prior to other stuff, then you wouldn't reboot
     case $REBOOT in
         true )
+            echo "OS installation complete. REBOOTING!" | sudo tee -a /dev/tty0
+            echo "OS installation complete. REBOOTING!" | sudo tee -a /dev/console
+            echo "OS installation complete. REBOOTING!" | sudo tee -a /dev/ttyS0
             sudo reboot
             ;;
         false )
